@@ -1,10 +1,7 @@
-#include <SoftwareSerial.h>
-
 #define TX_PIN 11
 #define RX_PIN 12
 
-#define INTERVAL_MS 10 
-String bytesRead="";
+#define INTERVAL_US 10000 // 10ms
 
 void setup() {
   Serial.begin(9600);
@@ -13,13 +10,6 @@ void setup() {
 }
 
 void loop() {
-//
-//  if(digitalRead(RX_PIN)==HIGH){
-//    Serial.println(HIGH);
-//  } else{
-//    Serial.println(LOW);
-//  }
-//  delay(10);
   char serialData = Serial.read();
   if((int)serialData!=-1){
     transmit(serialData);
@@ -31,23 +21,21 @@ void loop() {
     Serial.write(recievedData);
   }
   
-  
+  delayMicroseconds(100); // to make sure serial line is not saturated
 }
 
 void transmit(char code){
 
   digitalWrite(TX_PIN, HIGH);
-  delay(INTERVAL_MS);
+  delayMicroseconds(INTERVAL_US);
   
-  int tempInt;
   for(int i=0; i<8; i++){
-    tempInt = (code >> i)%2;
-    if(tempInt==0){
+    if(((code >> i)%2)==1){
       digitalWrite(TX_PIN, HIGH);
     } else{
       digitalWrite(TX_PIN, LOW);
     }
-    delay(INTERVAL_MS);
+    delayMicroseconds(INTERVAL_US);
   }
 
   digitalWrite(TX_PIN, LOW);
@@ -57,13 +45,13 @@ char recieve(){
   char dataToReturn=-1;
   
     int counter = 0;
-    while(digitalRead(RX_PIN)==LOW && counter<100){
-      delay(1);
+    while(digitalRead(RX_PIN)==HIGH && counter<100){
+      delayMicroseconds(INTERVAL_US/10);
       counter++;
     }
 
-    if(digitalRead(RX_PIN)==HIGH){
-      delay((INTERVAL_MS*2)+INTERVAL_MS);
+    if(digitalRead(RX_PIN)==LOW){
+      delayMicroseconds((int)(INTERVAL_US*1.5)); //jump to center of first bit
       dataToReturn=0;
 
       int pinState;
@@ -77,7 +65,7 @@ char recieve(){
 
         dataToReturn= (dataToReturn+pinState) << 1;
         
-        delay(INTERVAL_MS);
+        delayMicroseconds(INTERVAL_US);
       }
     }
   
